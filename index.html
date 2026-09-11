@@ -1,0 +1,67 @@
+<header class="header">
+    <div class="container" style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+            <h1><i class="fas fa-store"></i> LTBrown Community Store</h1>
+            <p>Fast Delivery for Our Community</p>
+        </div>
+        <div>
+            <button id="goShopBtn" style="padding:8px 16px;background:#27ae60;color:#fff;border:none;border-radius:5px;cursor:pointer;display:none;margin-right:8px;">商城首页</button>
+            <button id="goManageBtn" style="padding:8px 16px;background:#f39c12;color:#fff;border:none;border-radius:5px;cursor:pointer;display:none;margin-right:8px;">商品管理</button>
+            <button id="logoutBtn" style="padding:8px 16px;background:#e74c3c;color:#fff;border:none;border-radius:5px;cursor:pointer;display:none;">
+                Log Out
+            </button>
+        </div>
+    </div>
+</header>
+
+<!-- ========= 独立【商品管理页面】新增 ========= -->
+<div class="container" id="managePage" style="display:none;">
+    <section class="admin-page">
+        <h2>商品管理后台</h2>
+        <div class="admin-form">
+            <h3>添加/编辑商品</h3>
+            <div class="admin-row">
+                <input type="hidden" id="editProductId" value="">
+                <input type="text" id="prodName" placeholder="商品名称">
+                <input type="number" id="prodPrice" placeholder="商品价格">
+                <input type="number" id="prodStock" placeholder="库存">
+                <input type="text" id="prodImg" placeholder="图片URL">
+            </div>
+            <button class="admin-btn-add" onclick="saveProduct()">保存商品</button>
+        </div>
+        <div class="admin-list-wrap">
+            <h3>商品列表</h3>
+            <div id="adminProductList"></div>
+        </div>
+    </section>
+</div>
+
+<!-- 原来的商城内容（商品网格、购物车、订单状态）放在shopPage容器 -->
+<div id="shopPage">
+    <section class="cart-section">
+        <div class="container">
+            <h2>Your Cart <span id="cart-count">0</span></h2>
+            <div id="cart-items" class="cart-items"></div>
+            <p class="total">Total: NT$<span id="total-price">0.00</span></p>
+            <button id="checkout-btn" class="checkout-btn">Place Order & Request Delivery</button>
+        </div>
+    </section>
+    <main class="products">
+        <div class="container">
+            <h2>Community Products</h2>
+            <div class="product-grid" id="product-grid"></div>
+        </div>
+    </main>
+    <section class="order-status" id="order-status" style="display: none;">
+        <div class="container">
+            <h2>Order & Delivery Status</h2>
+            <p id="status-message"></p>
+            <div class="delivery-tracker">
+                <div class="step" id="step1"><i class="fas fa-check"></i> Order Placed</div>
+                <div class="step" id="step2">Preparing</div>
+                <div class="step" id="step3">Out for Delivery</div>
+                <div class="step" id="step4">Delivered</div>
+            </div>
+        </div>
+    </section>
+</div>
