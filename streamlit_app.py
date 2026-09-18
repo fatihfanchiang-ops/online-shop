@@ -16,7 +16,7 @@ def load_products():
             return json.load(f)
     else:
         return [
-            {"id": 1, "name": "77乳加巧克力", "price": 42, "stock": 90, "image": "https://img.pchome.com.tw/cs/items/DMAA0G-A9009X93P/000001_1684162444.jpg"},
+            {"id": 1, "name": "巧克力", "price": 42, "stock": 90, "image": "https://img.pchome.com.tw/cs/items/DMAA0G-A9009X93P/000001_1684162444.jpg"},
             {"id": 2, "name": "义美小泡芙", "price": 36, "stock": 70, "image": "https://img.pchome.com.tw/cs/items/DMAA0I-A90B2B878/000001_1687521121.jpg"},
             {"id": 3, "name": "瓶装珍珠奶茶", "price": 55, "stock": 85, "image": "https://img.pchome.com.tw/cs/items/DMAA0G-A906CAB8R/000001_1682344553.jpg"},
             {"id": 4, "name": "御饭团", "price": 32, "stock": 60, "image": "https://img.pchome.com.tw/cs/items/DMAA0I-A90CX696F/000001_1688125660.jpg"},
