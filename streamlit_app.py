@@ -2,10 +2,12 @@ import streamlit as st
 import uuid
 import json
 import os
+from datetime import datetime
 
 # 文件路径
 PRODUCT_FILE = "products.json"
 USER_FILE = "users.json"
+ORDER_FILE = "orders.json"
 
 # 加载商品
 def load_products():
@@ -39,6 +41,19 @@ def load_users():
 def save_users(user_list):
     with open(USER_FILE, "w", encoding="utf-8") as f:
         json.dump(user_list, f, ensure_ascii=False, indent=2)
+
+# 加载订单
+def load_orders():
+    if os.path.exists(ORDER_FILE):
+        with open(ORDER_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    else:
+        return []
+
+def save_orders(order_list):
+    with open(ORDER_FILE, "w", encoding="utf-8") as f:
+        json.dump(order_list, f, ensure_ascii=False, indent=2)
+
 
 # 会话状态初始化
 if "products" not in st.session_state:
@@ -134,9 +149,13 @@ elif st.session_state.page == "admin_login":
 elif st.session_state.page == "shop":
     user = st.session_state.current_user
     st.sidebar.markdown(f"当前登录：{user['username']}（{user['role']}）")
-    menu = st.sidebar.selectbox("功能菜单", ["商城首页"])
+
+    # 侧边菜单：管理员多【商品管理】【查看全部订单】，访客有【我的订单历史】
+    menu_list = ["商城首页", "我的订单历史"]
     if user["role"] == "admin":
-        menu = st.sidebar.selectbox("功能菜单", ["商城首页", "商品管理（后台）"])
+        menu_list = ["商城首页", "商品管理（后台）", "查看全部用户订单"]
+
+    menu = st.sidebar.selectbox("功能菜单", menu_list)
 
     if st.sidebar.button("退出登录"):
         st.session_state.current_user = None
@@ -144,9 +163,9 @@ elif st.session_state.page == "shop":
         st.session_state.page = "home"
         st.rerun()
 
-    # 商品管理后台（仅管理员）
+    # ---------- 商品管理后台（Admin Portal 管理员门户） ----------
     if menu == "商品管理（后台）":
-        st.title("商品管理后台")
+        st.title("商品管理后台 Admin Portal")
         st.subheader("新增 / 编辑商品")
         edit_id_input = st.text_input("编辑ID（新增商品时留空）")
         name_input = st.text_input("商品名称")
@@ -189,17 +208,44 @@ elif st.session_state.page == "shop":
                 st.warning("商品已删除")
                 st.rerun()
 
-        st.subheader("全部商品列表")
+        st.subheader("全部商品列表（带商品图片）")
         for product in st.session_state.products:
             with st.expander(f"{product['name']}｜NT${product['price']}｜库存:{product['stock']}"):
                 st.write(f"商品ID：{product['id']}")
                 st.write(f"图片链接：{product['image']}")
                 st.image(product["image"], width=200)
 
-    # 商城首页+购物车
+    # ---------- 管理员：查看全部订单 ----------
+    elif menu == "查看全部用户订单":
+        st.title("管理员 - 所有订单列表")
+        all_orders = load_orders()
+        if len(all_orders) == 0:
+            st.info("暂无任何订单")
+        else:
+            for order in all_orders:
+                with st.expander(f"订单编号：{order['order_id']} | 用户：{order['username']} | 下单时间：{order['order_time']} | 总价 NT${order['total']}"):
+                    for item in order["items"]:
+                        st.write(f"{item['name']} × {item['quantity']} = NT${item['price'] * item['quantity']}")
+
+    # ---------- 访客：我的订单历史 ----------
+    elif menu == "我的订单历史":
+        st.title("我的订单历史")
+        all_orders = load_orders()
+        # 筛选当前登录用户的订单
+        my_orders = [o for o in all_orders if o["username"] == user["username"]]
+        if len(my_orders) ==0:
+            st.info("你还没有下过订单")
+        else:
+            for order in my_orders:
+                with st.expander(f"订单编号：{order['order_id']} | 下单时间：{order['order_time']} | 总价 NT${order['total']}"):
+                    for item in order["items"]:
+                        st.write(f"{item['name']} × {item['quantity']} = NT${item['price'] * item['quantity']}")
+
+    # ---------- 商城首页 + 购物车（增加数量计数器、结账按钮） ----------
     elif menu == "商城首页":
         st.title("社区便利店")
-        st.subheader("商品列表")
+        st.subheader("商品列表（带商品图片）")
+        # 选购商品，数量选择
         for product in st.session_state.products:
             with st.container(border=True):
                 col_img, col_info = st.columns([1, 3])
@@ -209,17 +255,53 @@ elif st.session_state.page == "shop":
                     st.markdown(f"**{product['name']}**")
                     st.write(f"售价 NT$ {product['price']}")
                     st.write(f"剩余库存: {product['stock']}")
+                    buy_qty = st.number_input("购买数量", min_value=1, max_value=product["stock"], value=1, key=f"qty_{product['id']}")
                     if st.button(f"加入购物车 #{product['id']}", key=f"add_{product['id']}"):
-                        st.session_state.cart.append(product)
-                        st.success(f"{product['name']} 已加入购物车")
+                        # 加入购物车，保存数量
+                        cart_item = {
+                            "product_id": product["id"],
+                            "name": product["name"],
+                            "price": product["price"],
+                            "quantity": buy_qty
+                        }
+                        st.session_state.cart.append(cart_item)
+                        st.success(f"{product['name']} ×{buy_qty} 已加入购物车")
 
         st.divider()
-        st.subheader("🛒 购物车")
+        st.subheader("🛒 购物车（显示每件商品订购数量）")
         total_price = 0
-        for cart_item in st.session_state.cart:
-            st.write(f"{cart_item['name']} — NT${cart_item['price']}")
-            total_price += cart_item["price"]
+        for index, cart_item in enumerate(st.session_state.cart):
+            item_total = cart_item["price"] * cart_item["quantity"]
+            total_price += item_total
+            st.write(f"{cart_item['name']} ×{cart_item['quantity']} — NT${item_total}")
+            if st.button(f"删除 #{index}", key=f"del_cart_{index}"):
+                del st.session_state.cart[index]
+                st.rerun()
+
         st.markdown(f"### 总金额：NT$ {total_price}")
-        if st.button("清空购物车"):
-            st.session_state.cart = []
-            st.rerun()
+        col_clear, col_checkout = st.columns(2)
+        with col_clear:
+            if st.button("清空购物车"):
+                st.session_state.cart = []
+                st.rerun()
+        with col_checkout:
+            if st.button("✅ 结账 / Buy Now"):
+                if len(st.session_state.cart) == 0:
+                    st.warning("购物车是空的，不能结账！")
+                else:
+                    # 创建订单
+                    new_order = {
+                        "order_id": str(uuid.uuid4()),
+                        "username": user["username"],
+                        "items": st.session_state.cart,
+                        "total": total_price,
+                        "order_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    }
+                    orders = load_orders()
+                    orders.append(new_order)
+                    save_orders(orders)
+                    st.success(f"订单提交成功！订单编号：{new_order['order_id']}，管理员已收到订单，你可以在【我的订单历史】查看。")
+                    st.info("⚠️ 邮件通知功能：Streamlit免费部署环境无法直接发送邮件，可以后续额外配置SMTP实现邮件发送。")
+                    # 清空购物车
+                    st.session_state.cart = []
+                    st.rerun()
